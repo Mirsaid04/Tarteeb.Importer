@@ -4,6 +4,7 @@
 //=========================
 
 
+using System.Linq;
 using System.Threading.Tasks;
 using EFxceptions;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,10 @@ namespace Tarteeb.Importer.Brokers.Storages
 
             return client;
         }
+
+        public IQueryable<Client> SelectAllClientsAsync() =>
+            this.Clients.AsQueryable();
+        
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             string connectionString = "Data Source = ..\\..\\..\\Tarteeb.db";
