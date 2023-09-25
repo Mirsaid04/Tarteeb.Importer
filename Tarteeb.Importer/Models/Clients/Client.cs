@@ -17,6 +17,5 @@ namespace Tarteeb.Importer.Models.Clients
         public string  Email { get; set; }
         public DateTimeOffset BirthDate { get; set; }
         public Guid GroupID { get; set; }
-
     }
 }
