@@ -26,9 +26,7 @@ namespace Tarteeb.Importer.Services.Clients
             this.storageBroker = storageBroker;
             this.dateTimeBroker = dateTimeBroker;
         }
-
-        /// <exception cref="NullClientException"></exception>
-        /// <exception cref="InvalidClientException"></exception>
+        
         internal Task<Client> AddClientAsync(Client client) =>
         TryCatch(() =>
         {
