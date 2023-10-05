@@ -8,9 +8,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
-using System.Security;
 using System.Threading.Tasks;
 using Tarteeb.Importer.Brokers.DateTimes;
 using Tarteeb.Importer.Brokers.Loggings;
@@ -43,7 +40,7 @@ internal class Program
 
             Console.WriteLine(persistedCLient.FirstName);
         }
-        catch(ClientValidationException clientValidationException)
+        catch (ClientValidationException clientValidationException)
         {
             Xeption innerException = (Xeption)clientValidationException.InnerException;
 
@@ -53,7 +50,7 @@ internal class Program
             {
                 string errorSummary = ((List<string>)entry.Value)
                     .Select((string value) => value)
-                    .Aggregate((string current , string next ) => current + ", " + next);
+                    .Aggregate((string current, string next) => current + ", " + next);
 
                 Console.WriteLine(entry.Key + " - " + errorSummary);
             }
