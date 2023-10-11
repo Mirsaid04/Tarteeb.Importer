@@ -5,30 +5,79 @@
 
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Bogus;
+using Tarteeb.Importer.Brokers.DateTimes;
+using Tarteeb.Importer.Brokers.Loggings;
 using Tarteeb.Importer.Brokers.Storages;
 using Tarteeb.Importer.Models.Clients;
+using Tarteeb.Importer.Models.Clients.Exceptions;
+using Tarteeb.Importer.Services.Clients;
+using Xeptions;
 
-namespace Tarteeb.Importer
+internal class Program
 {
-    internal class Program
+    static async Task Main(string[] args)
     {
-        static void Main(string[] args)
+        var clientCount = new Faker();
+
+        for (int i = 0; i < 2000; i++)
         {
-            var client = new Client
+            Client client = new Client
             {
-                Id = Guid.NewGuid(),
-                FirstName = "Mirsaid",
-                LastName = "Sirojiddinov",
-                PhoneNumber = "00000000000",
-                Email = "Bro@gmail.com",
-                BirthDate = DateTime.Now,
+                FirstName = clientCount.Name.FirstName(),
+                LastName = clientCount.Name.LastName(),
+                Email = clientCount.Internet.Email(),
+                BirthDate = clientCount.Date.Between(new DateTime(1990,1,1), new DateTime(2023,1,1)),
+                Id = clientCount.Random.Guid(),
+                GroupID =clientCount.Random.Guid(),
+                PhoneNumber = clientCount.Phone.PhoneNumber(),
             };
 
-            using (var storageBroker = new StorageBroker())
+            var loggingBroker = new LoggingBroker();
+            var clientService = new ClientService(new StorageBroker(), new DateTimeBroker());
+
+            try
             {
-                storageBroker.Clients.Add(client);
-                storageBroker.SaveChanges();
+                var persistedCLient = await clientService.AddClientAsync(client);
+                Console.WriteLine(persistedCLient.FirstName);
+            }
+            catch (ClientValidationException clientValidationException)
+            {
+                Xeption innerException = (Xeption)clientValidationException.InnerException;
+
+                loggingBroker.LogError(innerException.Message);
+
+                foreach (DictionaryEntry entry in innerException.Data)
+                {
+                    string errorSummary = ((List<string>)entry.Value)
+                        .Select((string value) => value)
+                        .Aggregate((string current, string next) => current + ", " + next);
+
+                    Console.WriteLine(entry.Key + " - " + errorSummary);
+                }
+            }
+            catch (ClientDependencyValidationException clientDependencyValidationException)
+            {
+                loggingBroker.LogError(clientDependencyValidationException.InnerException.Message);
+            }
+            catch (ClientDependencyException clientDependencyException)
+            {
+                loggingBroker.LogError(clientDependencyException.InnerException.Message);
+            }
+            catch (ClientServiceException clientServiceException)
+            {
+                loggingBroker.LogError(clientServiceException.InnerException.Message);
             }
         }
     }
 }
+
+
+    
+    
+    
+
