@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Bogus;
 using Tarteeb.Importer.Brokers.DateTimes;
 using Tarteeb.Importer.Brokers.Loggings;
 using Tarteeb.Importer.Brokers.Storages;
@@ -21,39 +22,62 @@ internal class Program
 {
     static async Task Main(string[] args)
     {
-        LoggingBroker loggingBroker = new LoggingBroker();
-        try
+        var clientCount = new Faker();
+
+        for (int i = 0; i < 2000; i++)
         {
-            var clientService = new ClientService(new StorageBroker(), new DateTimeBroker());
             Client client = new Client
             {
-                FirstName = "Mirsaid",
-                LastName = "Sirojiddinov",
-                Email = "Mirsaid04@gmail.com",
-                BirthDate = DateTimeOffset.UtcNow,
-                Id = Guid.NewGuid(),
-                GroupID = Guid.NewGuid(),
-                PhoneNumber = "12345678"
+                FirstName = clientCount.Name.FirstName(),
+                LastName = clientCount.Name.LastName(),
+                Email = clientCount.Internet.Email(),
+                BirthDate = clientCount.Date.Between(new DateTime(1990,1,1), new DateTime(2023,1,1)),
+                Id = clientCount.Random.Guid(),
+                GroupID =clientCount.Random.Guid(),
+                PhoneNumber = clientCount.Phone.PhoneNumber(),
             };
 
-            var persistedCLient = await clientService.AddClientAsync(client);
+            var loggingBroker = new LoggingBroker();
+            var clientService = new ClientService(new StorageBroker(), new DateTimeBroker());
 
-            Console.WriteLine(persistedCLient.FirstName);
-        }
-        catch (ClientValidationException clientValidationException)
-        {
-            Xeption innerException = (Xeption)clientValidationException.InnerException;
-
-            loggingBroker.LogError(innerException.Message);
-
-            foreach (DictionaryEntry entry in innerException.Data)
+            try
             {
-                string errorSummary = ((List<string>)entry.Value)
-                    .Select((string value) => value)
-                    .Aggregate((string current, string next) => current + ", " + next);
+                var persistedCLient = await clientService.AddClientAsync(client);
+                Console.WriteLine(persistedCLient.FirstName);
+            }
+            catch (ClientValidationException clientValidationException)
+            {
+                Xeption innerException = (Xeption)clientValidationException.InnerException;
 
-                Console.WriteLine(entry.Key + " - " + errorSummary);
+                loggingBroker.LogError(innerException.Message);
+
+                foreach (DictionaryEntry entry in innerException.Data)
+                {
+                    string errorSummary = ((List<string>)entry.Value)
+                        .Select((string value) => value)
+                        .Aggregate((string current, string next) => current + ", " + next);
+
+                    Console.WriteLine(entry.Key + " - " + errorSummary);
+                }
+            }
+            catch (ClientDependencyValidationException clientDependencyValidationException)
+            {
+                loggingBroker.LogError(clientDependencyValidationException.InnerException.Message);
+            }
+            catch (ClientDependencyException clientDependencyException)
+            {
+                loggingBroker.LogError(clientDependencyException.InnerException.Message);
+            }
+            catch (ClientServiceException clientServiceException)
+            {
+                loggingBroker.LogError(clientServiceException.InnerException.Message);
             }
         }
     }
 }
+
+
+    
+    
+    
+
